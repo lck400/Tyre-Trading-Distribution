@@ -11,9 +11,10 @@ import { SupplierAnalyticsModal } from './components/SupplierAnalyticsModal';
 import { PeriodicPriceCollectorModal } from './components/PeriodicPriceCollectorModal';
 import { TireHistoryModal } from './components/TireHistoryModal';
 
-import { TireRow, SupplierInfo, QuoteItem, SheetType, UaeRegion, CompanyProfile } from './types/tire';
+import { TireRow, SupplierInfo, QuoteItem, QuoteMeta, SheetType, UaeRegion, CompanyProfile } from './types/tire';
 import { INITIAL_TIRE_DATA, INITIAL_SUPPLIERS, UAE_REGIONS, DEFAULT_COMPANY_PROFILE } from './data/initialData';
 import { MarginMethod, calculateTirePricing } from './utils/calculations';
+import { createEmptyQuoteMeta, nextQuoteNumber } from './utils/quotation';
 
 const STORAGE_KEY_TIRES = 'marginflow_tires_v2';
 const STORAGE_KEY_SUPPLIERS = 'marginflow_suppliers_v2';
@@ -22,6 +23,8 @@ const STORAGE_KEY_MARGIN = 'marginflow_margin_v2';
 const STORAGE_KEY_MARGIN_METHOD = 'marginflow_margin_method_v2';
 const STORAGE_KEY_CURRENCY = 'marginflow_currency_v2';
 const STORAGE_KEY_REGION = 'marginflow_region_v2';
+const STORAGE_KEY_QUOTE_ITEMS = 'marginflow_quote_items_v1';
+const STORAGE_KEY_QUOTE_META = 'marginflow_quote_meta_v1';
 
 export default function App() {
   const [companyProfile] = useState<CompanyProfile>(DEFAULT_COMPANY_PROFILE);
@@ -53,7 +56,7 @@ export default function App() {
   });
 
   // State: Active visible suppliers
-  const [activeSuppliers, setActiveSuppliers] = useState<string[]>(() => {
+  const [activeSuppliers, setActiveSuppliersState] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY_ACTIVE_SUPPLIERS);
       if (stored) {
@@ -116,8 +119,41 @@ export default function App() {
   const [historyTire, setHistoryTire] = useState<TireRow | null>(null);
   const [isQuoteOpen, setIsQuoteOpen] = useState(false);
 
-  // State: Quote Items
-  const [quoteItems, setQuoteItems] = useState<QuoteItem[]>([]);
+  // State: Quote Items & header (persisted so a draft quote survives refresh)
+  const [quoteItems, setQuoteItems] = useState<QuoteItem[]>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_QUOTE_ITEMS);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return [];
+  });
+
+  const [quoteMeta, setQuoteMeta] = useState<QuoteMeta>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_QUOTE_META);
+      if (stored) return { ...createEmptyQuoteMeta(), ...JSON.parse(stored) };
+    } catch (e) {}
+    return createEmptyQuoteMeta();
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_QUOTE_ITEMS, JSON.stringify(quoteItems));
+    } catch (e) {}
+  }, [quoteItems]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_QUOTE_META, JSON.stringify(quoteMeta));
+    } catch (e) {}
+  }, [quoteMeta]);
+
+  // Assign a sequential quote number once the first item lands in an un-numbered quote
+  useEffect(() => {
+    if (quoteItems.length > 0 && !quoteMeta.quoteNo) {
+      setQuoteMeta((prev) => ({ ...prev, quoteNo: nextQuoteNumber(), date: new Date().toISOString().slice(0, 10) }));
+    }
+  }, [quoteItems.length, quoteMeta.quoteNo]);
 
   // Persist to localStorage
   useEffect(() => {
@@ -165,6 +201,10 @@ export default function App() {
   // Sheet switching logic
   const handleSheetChange = (sheet: SheetType) => {
     setActiveSheet(sheet);
+    // Suppliers created by the user are not part of any preset sheet list; keep them visible on every sheet.
+    const seedNames = new Set(INITIAL_SUPPLIERS.map((s) => s.name));
+    const customSuppliers = suppliers.filter((s) => !seedNames.has(s.name)).map((s) => s.name);
+    const setActiveSuppliers = (names: string[]) => setActiveSuppliersState([...new Set([...names, ...customSuppliers])]);
     if (sheet === 'china') {
       // Sheet 1: China Stock
       const chinaSuppliers = ['Bain AL Nahren', 'Masar Al Taweel', 'Double star', 'KingHunter', 'False Grand'];
@@ -330,18 +370,18 @@ export default function App() {
     ) {
       setTires(INITIAL_TIRE_DATA);
       setSuppliers(INITIAL_SUPPLIERS);
-      setActiveSuppliers(['Bain AL Nahren', 'Masar Al Taweel', 'Double star', 'KingHunter', 'False Grand']);
+      setActiveSuppliersState(['Bain AL Nahren', 'Masar Al Taweel', 'Double star', 'KingHunter', 'False Grand']);
       setMarginPercent(5);
       setMarginMethod('markup');
       setSelectedRegion('all');
       setActiveSheet('china');
-      setQuoteItems([]);
+      handleNewQuote();
     }
   };
 
   // Supplier management handlers
   const handleToggleSupplier = (supplierName: string) => {
-    setActiveSuppliers((prev) => {
+    setActiveSuppliersState((prev) => {
       if (prev.includes(supplierName)) {
         if (prev.length <= 1) {
           alert('At least one supplier must remain active in comparison.');
@@ -354,15 +394,16 @@ export default function App() {
     });
   };
 
-  const handleAddSupplier = (name: string, color: string, phone?: string) => {
+  const handleAddSupplier = (name: string, color: string, phone?: string, contact?: string) => {
     const newS: SupplierInfo = {
       id: `sup-${Date.now()}`,
       name,
       color,
       phone,
+      contact,
     };
     setSuppliers((prev) => [...prev, newS]);
-    setActiveSuppliers((prev) => [...prev, name]);
+    setActiveSuppliersState((prev) => [...prev, name]);
   };
 
   // Quotation drawer handlers
@@ -370,7 +411,8 @@ export default function App() {
     const calc = calculateTirePricing(tire, marginPercent, marginMethod, activeSuppliers, selectedRegionConfig);
     if (calc.bestPrice === null || calc.finalOfferPrice === null) return;
     const costPrice = calc.bestPrice;
-    const unitPrice = calc.pricesPerUnit ?? calc.finalOfferPrice;
+    // finalOfferPrice = margin price + regional logistics surcharge for the selected delivery region
+    const unitPrice = calc.finalOfferPrice;
     const bestSupplier = calc.bestSupplier || 'Market';
     const margin = calc.marginPercent;
 
@@ -393,6 +435,8 @@ export default function App() {
             unitPrice,
             quantity,
             region: selectedRegionConfig.name,
+            pattern: tire.pattern,
+            regionalSurcharge: calc.regionalSurcharge,
           },
         ];
       }
@@ -429,8 +473,17 @@ export default function App() {
     setQuoteItems((prev) => prev.filter((item) => item.tireId !== tireId));
   };
 
-  const handleClearQuote = () => {
+  const handleSetQuoteUnitPrice = (tireId: string, unitPrice: number) => {
+    setQuoteItems((prev) => prev.map((item) => (item.tireId === tireId ? { ...item, unitPrice } : item)));
+  };
+
+  const handleQuoteMetaChange = (patch: Partial<QuoteMeta>) => {
+    setQuoteMeta((prev) => ({ ...prev, ...patch }));
+  };
+
+  const handleNewQuote = () => {
     setQuoteItems([]);
+    setQuoteMeta(createEmptyQuoteMeta());
   };
 
   // CSV Import
@@ -563,12 +616,16 @@ export default function App() {
         isOpen={isQuoteOpen}
         onClose={() => setIsQuoteOpen(false)}
         items={quoteItems}
+        meta={quoteMeta}
+        onMetaChange={handleQuoteMetaChange}
         onUpdateQuantity={handleUpdateQuoteQty}
         onSetQuantity={handleSetQuoteQty}
+        onSetUnitPrice={handleSetQuoteUnitPrice}
         onRemoveItem={handleRemoveQuoteItem}
-        onClearQuote={handleClearQuote}
+        onNewQuote={handleNewQuote}
         currency={currency}
         selectedRegionName={selectedRegionConfig.name}
+        companyProfile={companyProfile}
       />
 
       <ImportExportModal

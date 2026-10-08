@@ -66,6 +66,22 @@ export interface QuoteItem {
   unitPrice: number; // Prices Per Unit = Best Price * (1 + margin%)
   quantity: number;
   region?: string;
+  pattern?: string;
+  regionalSurcharge?: number; // per-tyre logistics surcharge already included in unitPrice
+}
+
+export interface QuoteMeta {
+  quoteNo: string;
+  date: string; // ISO yyyy-mm-dd
+  customerName: string;
+  customerPhone: string;
+  customerAddress: string;
+  vehicleNote: string;
+  validityDays: number;
+  vatEnabled: boolean;
+  vatRate: number; // percent, UAE standard 5
+  discount: number; // flat amount off the subtotal, before VAT
+  notes: string;
 }
 
 export interface PriceCollectionBatch {

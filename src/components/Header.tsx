@@ -11,7 +11,8 @@ import {
   MapPin, 
   Phone,
   User,
-  Truck
+  Truck,
+  Users
 } from 'lucide-react';
 import { SupplierInfo, SheetType, UaeRegion, CompanyProfile } from '../types/tire';
 import { UAE_REGIONS } from '../data/initialData';
@@ -193,6 +194,15 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <CalendarClock className="w-4 h-4 text-emerald-600" />
               <span className="hidden md:inline">Price Survey Log</span>
+            </button>
+
+            <button
+              onClick={onOpenSuppliers}
+              className="p-2 sm:px-2.5 sm:py-1.5 text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-1.5"
+              title="Add new suppliers and choose which ones appear in comparison"
+            >
+              <Users className="w-4 h-4 text-slate-500" />
+              <span className="hidden lg:inline">Suppliers</span>
             </button>
 
             <button

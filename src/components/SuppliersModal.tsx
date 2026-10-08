@@ -8,7 +8,7 @@ interface SuppliersModalProps {
   suppliers: SupplierInfo[];
   activeSuppliers: string[];
   onToggleSupplier: (supplierName: string) => void;
-  onAddSupplier: (name: string, color: string, phone?: string) => void;
+  onAddSupplier: (name: string, color: string, phone?: string, contact?: string) => void;
 }
 
 const PALETTE = ['#2563EB', '#059669', '#D97706', '#7C3AED', '#DC2626', '#0891B2', '#4F46E5', '#EA580C', '#0D9488'];
@@ -23,6 +23,7 @@ export const SuppliersModal: React.FC<SuppliersModalProps> = ({
 }) => {
   const [newSupplierName, setNewSupplierName] = useState('');
   const [newSupplierPhone, setNewSupplierPhone] = useState('');
+  const [newSupplierContact, setNewSupplierContact] = useState('');
   const [newSupplierColor, setNewSupplierColor] = useState(PALETTE[0]);
   const [error, setError] = useState('');
 
@@ -40,8 +41,14 @@ export const SuppliersModal: React.FC<SuppliersModalProps> = ({
       return;
     }
 
-    onAddSupplier(trimmed, newSupplierColor, newSupplierPhone.trim() || undefined);
+    onAddSupplier(
+      trimmed,
+      newSupplierColor,
+      newSupplierPhone.trim() || undefined,
+      newSupplierContact.trim() || undefined
+    );
     setNewSupplierName('');
+    setNewSupplierContact('');
     setNewSupplierPhone('');
     setError('');
   };
@@ -81,6 +88,7 @@ export const SuppliersModal: React.FC<SuppliersModalProps> = ({
                     />
                     <div>
                       <div className="text-xs font-bold text-slate-900">{s.name}</div>
+                      {s.contact && <div className="text-[11px] text-slate-500">{s.contact}</div>}
                       {s.phone && (
                         <div className="text-[11px] text-slate-500 flex items-center gap-1 font-mono">
                           <Phone className="w-3 h-3 text-slate-400" />
@@ -129,14 +137,22 @@ export const SuppliersModal: React.FC<SuppliersModalProps> = ({
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="text"
-                placeholder="Supplier Name (e.g. LingLong, Westlake)"
+                placeholder="Supplier Name *"
+                autoFocus
                 value={newSupplierName}
                 onChange={(e) => setNewSupplierName(e.target.value)}
-                className="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                className="col-span-2 px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
               />
               <input
                 type="text"
-                placeholder="Sales Phone / Contact"
+                placeholder="Contact Person (optional)"
+                value={newSupplierContact}
+                onChange={(e) => setNewSupplierContact(e.target.value)}
+                className="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+              />
+              <input
+                type="tel"
+                placeholder="Phone (optional)"
                 value={newSupplierPhone}
                 onChange={(e) => setNewSupplierPhone(e.target.value)}
                 className="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"

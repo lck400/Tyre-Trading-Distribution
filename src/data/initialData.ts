@@ -3,7 +3,7 @@ import { SupplierInfo, TireRow, TireCategory, RegionConfig, UaeRegion, CompanyPr
 export const DEFAULT_COMPANY_PROFILE: CompanyProfile = {
   companyName: 'Tyre Trading & Distribution',
   address: 'Deira Dubai, UAE',
-  salesExecutive: 'Muhammad Waseem',
+  salesExecutive: 'Waseem',
   contactNumber: '0581273079',
   routeSegment: 'Road Rice / China Tyres',
 };
