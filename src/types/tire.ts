@@ -59,13 +59,29 @@ export interface SupplierInfo {
 export interface QuoteItem {
   tireId: string;
   size: string;
+  pattern?: string;
   origin: string;
   bestSupplier: string;
   costPrice: number;
+  regionalSurcharge?: number; // per-tyre logistics surcharge already included in unitPrice
   marginPercent: number;
-  unitPrice: number; // Prices Per Unit = Best Price * (1 + margin%)
+  unitPrice: number; // Customer unit price = Best Price * (1 + margin%) + regionalSurcharge
   quantity: number;
   region?: string;
+}
+
+export interface QuoteMeta {
+  quoteNo: string;
+  date: string; // ISO yyyy-mm-dd
+  customerName: string;
+  customerPhone: string;
+  customerAddress: string;
+  vehicleNote: string;
+  validityDays: number; // default 7
+  vatEnabled: boolean; // default false
+  vatRate: number; // default 5
+  discount: number; // flat amount off subtotal, before VAT, default 0
+  notes: string;
 }
 
 export interface PriceCollectionBatch {

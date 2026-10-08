@@ -124,7 +124,7 @@ export function exportTiresToCSV(
   const company = companyProfile || {
     companyName: 'Tyre Trading & Distribution',
     address: 'Deira Dubai, UAE',
-    salesExecutive: 'Muhammad Waseem',
+    salesExecutive: 'Waseem',
     contactNumber: '0581273079',
     routeSegment: 'Road Rice / China Tyres',
   };

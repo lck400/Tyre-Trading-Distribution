@@ -11,22 +11,24 @@
   }
 }
 
-/* Custom print style for clean customer quotation slip */
+#quote-print-root {
+  display: none;
+}
+
 @media print {
-  body * {
-    visibility: hidden;
+  @page {
+    size: A4;
+    margin: 10mm;
   }
-  .animate-in.slide-in-from-right,
-  .animate-in.slide-in-from-right * {
-    visibility: visible;
+  body.printing-quote > *:not(#quote-print-root) {
+    display: none !important;
   }
-  .animate-in.slide-in-from-right {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    max-width: 100%;
-    box-shadow: none;
-    border: none;
+  body.printing-quote {
+    background: #fff !important;
+  }
+  body.printing-quote #quote-print-root {
+    display: block;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }
