@@ -1,0 +1,6 @@
+{
+  "name": "MarginFlow Tyres",
+  "description": "Professional tyre market price comparison, dynamic margin calculator, and multi-supplier catalog management system.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,78 @@
+export type TireCategory = 'All' | 'PCR (Passenger)' | 'UHP (Performance)' | 'SUV / 4x4' | 'Commercial & Van' | 'TBR (Truck & Bus)';
+
+export type SheetType = 'china' | 'hunter' | 'uhp_tbr' | 'all';
+
+export type UaeRegion = 'all' | 'rak' | 'fujairah' | 'ajman' | 'abudhabi' | 'alain' | 'dubai_sharjah';
+
+export interface CompanyProfile {
+  companyName: string;
+  address: string;
+  salesExecutive: string;
+  contactNumber: string;
+  routeSegment: string;
+}
+
+export interface RegionConfig {
+  id: UaeRegion;
+  name: string;
+  shortName: string;
+  logisticsSurcharge: number; // e.g. +5 AED per tyre for Abu Dhabi / Al Ain
+  transitTime: string;
+  notes: string;
+}
+
+export interface PriceHistoryEntry {
+  id: string;
+  date: string;
+  collectionBatch: string;
+  supplier: string;
+  oldPrice: number | null;
+  newPrice: number;
+  recordedBy?: string;
+  notes?: string;
+}
+
+export interface TireRow {
+  id: string;
+  sr: number;
+  size: string;
+  origin: string; // e.g. "China"
+  category?: TireCategory;
+  pattern?: string;
+  sheet?: SheetType;
+  prices: Record<string, number | null>; // supplierName -> price
+  notes?: string;
+  customMargin?: number | null; // optional row override %
+  lastUpdated?: string;
+  previousBestPrice?: number | null; // For trend indicator
+  history?: PriceHistoryEntry[];
+}
+
+export interface SupplierInfo {
+  id: string;
+  name: string;
+  color: string;
+  contact?: string;
+  phone?: string;
+}
+
+export interface QuoteItem {
+  tireId: string;
+  size: string;
+  origin: string;
+  bestSupplier: string;
+  costPrice: number;
+  marginPercent: number;
+  unitPrice: number; // Prices Per Unit = Best Price * (1 + margin%)
+  quantity: number;
+  region?: string;
+}
+
+export interface PriceCollectionBatch {
+  id: string;
+  title: string;
+  date: string;
+  supplier: string;
+  updatesCount: number;
+  notes?: string;
+}
